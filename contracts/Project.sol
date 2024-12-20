@@ -3,6 +3,7 @@
 pragma solidity ^0.8.28;
 
 error Project__NotEnoughCapitalInvested();
+error Project__NotActive();
 
 /**
  * @title A project for decentralized crowdfunding
@@ -10,6 +11,13 @@ error Project__NotEnoughCapitalInvested();
  * @notice This Smart Contract is used to describe a new project for a crowdfunding decentralized platform.
  */
 contract Project {
+	// Defining a ENUM to manage the project's status.
+	enum ProjectStatus {
+		ACTIVE,
+		FUNDED,
+		EXPIRED
+	}
+
 	// Immutable variables.
 	string private i_name;
 	string private i_description;
@@ -19,7 +27,8 @@ contract Project {
 	address private immutable i_targetWallet;
 
 	// Storage variables.
-	string private s_status;
+	ProjectStatus private s_status;
+	mapping(ProjectStatus => string) private s_statusLabel;
 	mapping(address => uint) private s_financiers;
 
 	// Event used to notify that the user has invested successfully into the project.
@@ -47,13 +56,17 @@ contract Project {
 		i_goal = goal;
 		i_minCapital = minCapital;
 		i_targetWallet = msg.sender;
-		s_status = "active";
+		s_status = ProjectStatus.ACTIVE;
+		initProjectStatusLabel();
 	}
 
 	/**
 	 * Function used to fund the project.
 	 */
 	function fundProject() public payable {
+		if (s_status != ProjectStatus.ACTIVE) {
+			revert Project__NotActive();
+		}
 		if (msg.value < i_minCapital) {
 			revert Project__NotEnoughCapitalInvested();
 		}
@@ -92,6 +105,14 @@ contract Project {
 		return i_targetWallet;
 	}
 	function getStatus() public view returns(string memory) {
-		return s_status;
+		return s_statusLabel[s_status];
+	}
+
+	/* Private Functions */
+
+	function initProjectStatusLabel() private {
+		s_statusLabel[ProjectStatus.ACTIVE] = "Active";
+		s_statusLabel[ProjectStatus.FUNDED] = "Funded";
+		s_statusLabel[ProjectStatus.EXPIRED] = "Expired";
 	}
 }
