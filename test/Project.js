@@ -49,4 +49,33 @@ describe("Project", () => {
 			expect(await project.getStatus()).to.equal("Active");
 		});
 	});
+
+	describe("fundProject", () => {
+		it("Fund the project for the first time and check if the balance of the contract is correct", async () => {
+			const { project, args, owner } = await loadFixture(deployProjectFixture);
+			const etherToSend = ethers.parseEther("1.0");
+
+			// Initial balance has to be zero.
+			const currentBalance = await ethers.provider.getBalance(project.target);
+			expect(currentBalance).to.equal(0);
+
+			// Fund project.
+			await project.fundProject({ value: etherToSend });
+
+			// New balance has to be equal to the ether sent.
+			const newBalance = await ethers.provider.getBalance(project.target);
+			expect(newBalance).to.equal(etherToSend);
+		});
+
+		it("Fund the project and check if my capital invested is correct", async () => {
+			const { project, args, owner } = await loadFixture(deployProjectFixture);
+			const etherToSend = ethers.parseEther("1.0");
+
+			// Fund project.
+			await project.fundProject({ value: etherToSend });
+
+			// My capital invested has to be equal to the ether sent.
+			expect(await project.getMyCapitalInvested()).to.equal(etherToSend);
+		});
+	});
 });
