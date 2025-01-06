@@ -2,8 +2,11 @@
 
 pragma solidity ^0.8.28;
 
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 error Project__NotEnoughCapitalInvested();
 error Project__NotActive();
+error Project__InsufficientAmount();
 
 /**
  * @title A project for decentralized crowdfunding
@@ -25,6 +28,7 @@ contract Project {
 	uint private immutable i_goal;
 	uint private immutable i_minCapital;
 	address private immutable i_targetWallet;
+	address private immutable i_usdtToken;
 
 	// Storage variables.
 	ProjectStatus private s_status;
@@ -33,6 +37,8 @@ contract Project {
 
 	// Event used to notify that the user has invested successfully into the project.
 	event InvestedInProject(address indexed financier, uint indexed capital);
+	// Event used to notify that the project has been funded successfully.
+	event ProjectFunded(address indexed contractAddress);
 
 	/**
 	 * Constructor.
@@ -48,13 +54,16 @@ contract Project {
 		string memory description,
 		string memory expiration,
 		uint goal,
-		uint minCapital
+		uint minCapital,
+		address usdtToken
 	) {
 		i_name = name;
 		i_description = description;
 		i_expiration = expiration;
 		i_goal = goal;
 		i_minCapital = minCapital;
+		i_usdtToken = usdtToken;
+
 		i_targetWallet = msg.sender;
 		s_status = ProjectStatus.ACTIVE;
 		initProjectStatusLabel();
@@ -63,16 +72,30 @@ contract Project {
 	/**
 	 * Function used to fund the project.
 	 */
-	function fundProject() public payable {
+	function fundProject(uint amount) public {
 		if (s_status != ProjectStatus.ACTIVE) {
 			revert Project__NotActive();
 		}
-		if (msg.value < i_minCapital) {
+		if (amount < i_minCapital) {
 			revert Project__NotEnoughCapitalInvested();
 		}
-		s_financiers[msg.sender] = msg.value;
 
-		emit InvestedInProject(msg.sender, msg.value);
+		// Transfer USDT from the caller of this contract.
+		IERC20 usdt = IERC20(i_usdtToken);
+		bool success = usdt.transferFrom(msg.sender, address(this), amount);
+		if (!success) {
+			revert Project__InsufficientAmount();
+		}
+
+		// Saving the amount financied and emit the event.
+		s_financiers[msg.sender] += amount;
+		emit InvestedInProject(msg.sender, amount);
+
+		// Check if the goal is reached.
+		if (usdt.balanceOf(address(this)) >= i_goal) {
+			s_status = ProjectStatus.FUNDED;
+			emit ProjectFunded(address(this));
+		}
 	}
 
 	/**
