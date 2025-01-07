@@ -28,7 +28,7 @@ contract Project {
 	uint private immutable i_goal;
 	uint private immutable i_minCapital;
 	address private immutable i_targetWallet;
-	address private immutable i_usdtToken;
+	address private immutable i_usdtTokenAddress;
 
 	// Storage variables.
 	ProjectStatus private s_status;
@@ -62,7 +62,7 @@ contract Project {
 		i_expiration = expiration;
 		i_goal = goal;
 		i_minCapital = minCapital;
-		i_usdtToken = usdtToken;
+		i_usdtTokenAddress = usdtToken;
 
 		i_targetWallet = msg.sender;
 		s_status = ProjectStatus.ACTIVE;
@@ -81,7 +81,7 @@ contract Project {
 		}
 
 		// Transfer USDT from the caller of this contract.
-		IERC20 usdt = IERC20(i_usdtToken);
+		IERC20 usdt = IERC20(i_usdtTokenAddress);
 		bool success = usdt.transferFrom(msg.sender, address(this), amount);
 		if (!success) {
 			revert Project__InsufficientAmount();
@@ -105,6 +105,16 @@ contract Project {
 	 */
 	function getMyCapitalInvested() public view returns(uint) {
 		return s_financiers[msg.sender];
+	}
+
+	/**
+	 * Function used to obtain the current capital invested into the project.
+	 * 
+	 * @return The capital invested into the project.
+	 */
+	function getUSDTBalance() public view returns(uint) {
+		IERC20 usdt = IERC20(i_usdtTokenAddress);
+		return usdt.balanceOf(address(this));
 	}
 
 	/* Getters Function */
