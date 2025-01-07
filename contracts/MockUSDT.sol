@@ -15,6 +15,13 @@ contract MockUSDT is ERC20 {
 	 * Constructor.
 	 */	
 	constructor() ERC20("Tether USD", "USDT") {
-		_mint(msg.sender, 1_000 * 10 ** decimals()); // 6 decimals.
+		_mint(msg.sender, 10_000 * 10 ** decimals());
+	}
+
+	/**
+	 * Returns the number of decimals used to get its representation (USDT).
+	 */
+	function decimals() public pure override returns (uint8) {
+		return 6;
 	}
 }

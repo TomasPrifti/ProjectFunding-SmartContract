@@ -70,7 +70,7 @@ describe("Project", () => {
 			// Fund project.
 			await project.connect(owner).fundProject(usdtToSend);
 
-			// New balance has to be equal to the ether sent.
+			// New balance has to be equal to the USDT sent.
 			const newBalance = await usdt.balanceOf(project.target);
 			expect(newBalance).to.equal(usdtToSend);
 		});
@@ -85,7 +85,7 @@ describe("Project", () => {
 			// Fund project.
 			await project.connect(owner).fundProject(usdtToSend);
 
-			// My capital invested has to be equal to the ether sent.
+			// My capital invested has to be equal to the USDT sent.
 			expect(await project.getMyCapitalInvested()).to.equal(usdtToSend);
 		});
 
@@ -121,6 +121,54 @@ describe("Project", () => {
 			 */
 			await usdt.connect(owner).approve(project.target, usdtToSend);
 			expect(project.connect(owner).fundProject(usdtToSend)).to.be.revertedWith("Project__NotActive");
+		});
+
+		it("Testing the revert Project__NotEnoughCapitalInvested", async () => {
+			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("10", 6);
+
+			/**
+			 * The owner has to connect and approve to the USDT Token Contract.
+			 * Fund project with less capital than the minCapital requested in order to fail.
+			 */
+			await usdt.connect(owner).approve(project.target, usdtToSend);
+			expect(project.connect(owner).fundProject(usdtToSend)).to.be.revertedWith("Project__NotEnoughCapitalInvested");
+		});
+
+		it("Testing the revert Project__InsufficientAmount", async () => {
+			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+
+			// Owner balance.
+			const ownerBalance = await usdt.balanceOf(owner.address);
+			const usdtToSend = ownerBalance * 2n;
+
+			/**
+			 * The owner has to connect and approve to the USDT Token Contract.
+			 * Fund project with double of owner balance in order to fail.
+			 */
+			await usdt.connect(owner).approve(project.target, usdtToSend);
+			expect(project.connect(owner).fundProject(usdtToSend)).to.be.revertedWith("Project__InsufficientAmount");
+		});
+	});
+
+	describe("getUSDTBalance", () => {
+		it("Testing the function getUSDTBalance", async () => {
+			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+
+			// Initial balance has to be zero.
+			expect(await usdt.balanceOf(project.target)).to.equal(0);
+			expect(await project.getUSDTBalance()).to.equal(0);
+
+			// The owner has to connect and approve to the USDT Token Contract.
+			await usdt.connect(owner).approve(project.target, usdtToSend);
+
+			// Fund project.
+			await project.connect(owner).fundProject(usdtToSend);
+
+			// New balance has to be equal to the USDT sent.
+			expect(await usdt.balanceOf(project.target)).to.equal(usdtToSend);
+			expect(await project.getUSDTBalance()).to.equal(usdtToSend);
 		});
 	});
 });

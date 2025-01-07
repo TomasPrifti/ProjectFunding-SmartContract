@@ -80,8 +80,16 @@ contract Project {
 			revert Project__NotEnoughCapitalInvested();
 		}
 
-		// Transfer USDT from the caller of this contract.
 		IERC20 usdt = IERC20(i_usdtTokenAddress);
+
+		// Manually check of the owner balance and the allowance.
+		uint256 balance = usdt.balanceOf(msg.sender);
+		uint256 allowance = usdt.allowance(msg.sender, address(this));
+		if (balance < amount || allowance < amount) {
+			revert Project__InsufficientAmount();
+		}
+
+		// Transfer USDT from the caller of this contract.
 		bool success = usdt.transferFrom(msg.sender, address(this), amount);
 		if (!success) {
 			revert Project__InsufficientAmount();
