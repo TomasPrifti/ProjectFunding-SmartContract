@@ -3,17 +3,20 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "deploy": "npx hardhat ignition deploy ignition/modules/deploy.js --network localhost --parameters ignition/parameters.json",
+    "mocks": "npx hardhat ignition deploy ignition/modules/mocks.js --network localhost",
+    "test": "npx hardhat test",
+    "coverage": "npx hardhat coverage"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat": "^2.22.17",
     "hardhat-shorthand": "^1.0.0"
   },
   "dependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.17",
     "@openzeppelin/contracts": "^5.1.0"
   }
 }

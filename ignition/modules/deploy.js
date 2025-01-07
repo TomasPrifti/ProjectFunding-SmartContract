@@ -7,8 +7,9 @@ module.exports = buildModule("ProjectModule", (module) => {
 		name: "Name of the project",
 		description: "Description of the project",
 		expiration: "Expiration of the project",
-		goal: 1000,
-		minCapital: 10,
+		goal: 10_000 * 10 ** 6,
+		minCapital: 100 * 10 ** 6,
+		usdtToken: module.getParameter("MocksUSDT"),
 	};
 
 	// Deploying Contract.
@@ -18,7 +19,10 @@ module.exports = buildModule("ProjectModule", (module) => {
 		args.expiration,
 		args.goal,
 		args.minCapital,
+		args.usdtToken,
 	]);
+
+	console.log("Contracts deployed successfully!");
 
 	return { project };
 });
