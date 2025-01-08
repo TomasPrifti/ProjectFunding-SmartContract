@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 error Project__NotEnoughCapitalInvested();
 error Project__NotActive();
 error Project__InsufficientAmount();
+error Project__Expired();
 
 /**
  * @title A project for decentralized crowdfunding
@@ -24,7 +25,7 @@ contract Project {
 	// Immutable variables.
 	string private i_name;
 	string private i_description;
-	string private i_expiration;
+	uint private immutable i_expiration;
 	uint private immutable i_goal;
 	uint private immutable i_minCapital;
 	address private immutable i_targetWallet;
@@ -45,21 +46,21 @@ contract Project {
 	 * 
 	 * @param name Project's name.
 	 * @param description Project's description.
-	 * @param expiration The expiration date for the fundraising's end.
+	 * @param expiration The expiration UNIX Timestamp for the fundraising's end.
 	 * @param goal The goal to achieve to successfully fund the project.
 	 * @param minCapital The minimum capital requested to finance the project.
 	 */
 	constructor(
 		string memory name,
 		string memory description,
-		string memory expiration,
+		uint expiration,
 		uint goal,
 		uint minCapital,
 		address usdtToken
 	) {
 		i_name = name;
 		i_description = description;
-		i_expiration = expiration;
+		i_expiration = block.timestamp + expiration;
 		i_goal = goal;
 		i_minCapital = minCapital;
 		i_usdtTokenAddress = usdtToken;
@@ -73,6 +74,9 @@ contract Project {
 	 * Function used to fund the project.
 	 */
 	function fundProject(uint amount) public {
+		if (block.timestamp > i_expiration) {
+			revert Project__Expired();
+		}
 		if (s_status != ProjectStatus.ACTIVE) {
 			revert Project__NotActive();
 		}
@@ -125,6 +129,28 @@ contract Project {
 		return usdt.balanceOf(address(this));
 	}
 
+	/**
+	 * Function used to check if the project is expired.
+	 * 
+	 * @return True if the project is already expired, false otherwise.
+	 */
+	function isExpired() public view returns(bool) {
+		return block.timestamp > i_expiration;
+	}
+
+	/**
+	 * Function used to change the project's status.
+	 * 
+	 * @return True if the project is already expired, false otherwise.
+	 */
+	function changeStatus() public returns(bool) {
+		bool state = block.timestamp > i_expiration;
+		if (state) {
+			s_status = ProjectStatus.EXPIRED;
+		}
+		return state;
+	}	
+
 	/* Getters Function */
 
 	function getName() public view returns(string memory) {
@@ -133,7 +159,7 @@ contract Project {
 	function getDescription() public view returns(string memory) {
 		return i_description;
 	}
-	function getExpiration() public view returns(string memory) {
+	function getExpiration() public view returns(uint) {
 		return i_expiration;
 	}
 	function getGoal() public view returns(uint) {

@@ -1,5 +1,6 @@
 const {
 	loadFixture,
+	time,
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
@@ -18,11 +19,14 @@ describe("Project", () => {
 		// MockUSDT Contract Deploy.
 		const usdt = await ethers.deployContract("MockUSDT");
 
+		// Calculating the expiration.
+		const expirationTime = 60 * 60 * 24 * 30; // 30 days.
+
 		// Defining constructor's parameters for the Contract.
 		const args = {
 			name: "Name of the project",
 			description: "Description of the project",
-			expiration: "Expiration of the project",
+			expiration: expirationTime,
 			goal: 10_000 * 10 ** 6,
 			minCapital: 100 * 10 ** 6,
 			usdtToken: usdt.target,
@@ -45,9 +49,14 @@ describe("Project", () => {
 		it("Initializes the Project correctly", async () => {
 			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
 
+			// Calculating the right expiration from the block's timestamp when the contrat has been deployed.
+			const transaction = await project.deploymentTransaction();
+			const blockOfProject = await ethers.provider.getBlock(transaction.blockHash);
+			const expiration = blockOfProject.timestamp + args.expiration;
+
 			expect(await project.getName()).to.equal(args.name);
 			expect(await project.getDescription()).to.equal(args.description);
-			expect(await project.getExpiration()).to.equal(args.expiration);
+			expect(await project.getExpiration()).to.equal(expiration);
 			expect(await project.getGoal()).to.equal(args.goal);
 			expect(await project.getMinCapital()).to.equal(args.minCapital);
 			expect(await project.getTargetWallet()).to.equal(owner);
@@ -149,6 +158,27 @@ describe("Project", () => {
 			await usdt.connect(owner).approve(project.target, usdtToSend);
 			expect(project.connect(owner).fundProject(usdtToSend)).to.be.revertedWith("Project__InsufficientAmount");
 		});
+
+		it("Testing the revert Project__Expired", async () => {
+			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			//const usdtToSend = ethers.parseUnits("100", 6); // questo è bigint
+
+			// Make the time passes.
+			const expiration = await project.getExpiration();
+			await time.increaseTo(expiration + 1n);
+			await project.changeStatus();
+			// Now the project has to be expired.
+			
+			expect(await project.isExpired()).to.be.true;
+			expect(await project.getStatus()).to.equal("Expired");
+
+			/**
+			 * The owner has to connect and approve to the USDT Token Contract.
+			 * Fund project with the minimum capital requested.
+			 */
+			await usdt.connect(owner).approve(project.target, args.minCapital);
+			expect(project.connect(owner).fundProject(args.minCapital)).to.be.revertedWith("Project__Expired");
+		});
 	});
 
 	describe("getUSDTBalance", () => {
@@ -169,6 +199,32 @@ describe("Project", () => {
 			// New balance has to be equal to the USDT sent.
 			expect(await usdt.balanceOf(project.target)).to.equal(usdtToSend);
 			expect(await project.getUSDTBalance()).to.equal(usdtToSend);
+		});
+	});
+
+	describe("isExpired", () => {
+		it("Testing the function isExpired", async () => {
+			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+
+			// Check status of current time and expiration at the project's creation.
+			const currentTime = BigInt(await time.latest());
+			const expiration = await project.getExpiration();
+
+			expect(expiration).to.be.greaterThan(currentTime);
+			expect(await project.isExpired()).to.be.false;
+			expect(await project.getStatus()).to.equal("Active");
+
+			// Make the time passes.
+			await time.increaseTo(expiration + 1n);
+			await project.changeStatus();
+			// Now the project has to be expired.
+
+			// Check the new status.
+			const newCurrentTime = BigInt(await time.latest());
+
+			expect(expiration).to.be.lessThan(newCurrentTime);
+			expect(await project.isExpired()).to.be.true;
+			expect(await project.getStatus()).to.equal("Expired");
 		});
 	});
 });
