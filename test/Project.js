@@ -98,6 +98,27 @@ describe("Project", () => {
 			expect(await project.getMyCapitalInvested()).to.equal(usdtToSend);
 		});
 
+		it("Fund the project and check if the event InvestedInProject and ProjectFunded are emitted", async () => {
+			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			const usdtToSend = args.goal / 2;
+
+			/**
+			 * 1. First approve and funding.
+			 * The owner has to connect and approve to the USDT Token Contract.
+			 * Fund project with the half of the capital requested.
+			 */
+			await usdt.connect(owner).approve(project.target, usdtToSend);
+			await expect(project.connect(owner).fundProject(usdtToSend)).to.emit(project, "InvestedInProject");
+
+			/**
+			 * 2. Second approve and funding.
+			 * The owner has to connect and approve to the USDT Token Contract.
+			 * Fund project with the half of the capital requested.
+			 */
+			await usdt.connect(owner).approve(project.target, usdtToSend);
+			await expect(project.connect(owner).fundProject(usdtToSend)).to.emit(project, "ProjectFunded");
+		});
+
 		it("Testing the revert Project__NotActive", async () => {
 			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("5000", 6);
