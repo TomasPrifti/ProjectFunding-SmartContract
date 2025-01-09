@@ -129,7 +129,7 @@ describe("Project", () => {
 			 * Check if project revert the operation.
 			 */
 			await usdt.connect(owner).approve(project.target, usdtToSend);
-			expect(project.connect(owner).fundProject(usdtToSend)).to.be.revertedWith("Project__NotActive");
+			await expect(project.connect(owner).fundProject(usdtToSend)).to.be.revertedWithCustomError(project, "Project__NotActive");
 		});
 
 		it("Testing the revert Project__NotEnoughCapitalInvested", async () => {
@@ -141,7 +141,7 @@ describe("Project", () => {
 			 * Fund project with less capital than the minCapital requested in order to fail.
 			 */
 			await usdt.connect(owner).approve(project.target, usdtToSend);
-			expect(project.connect(owner).fundProject(usdtToSend)).to.be.revertedWith("Project__NotEnoughCapitalInvested");
+			await expect(project.connect(owner).fundProject(usdtToSend)).to.be.revertedWithCustomError(project, "Project__NotEnoughCapitalInvested");
 		});
 
 		it("Testing the revert Project__InsufficientAmount", async () => {
@@ -156,7 +156,7 @@ describe("Project", () => {
 			 * Fund project with double of owner balance in order to fail.
 			 */
 			await usdt.connect(owner).approve(project.target, usdtToSend);
-			expect(project.connect(owner).fundProject(usdtToSend)).to.be.revertedWith("Project__InsufficientAmount");
+			await expect(project.connect(owner).fundProject(usdtToSend)).to.be.revertedWithCustomError(project, "Project__InsufficientAmount");
 		});
 
 		it("Testing the revert Project__Expired", async () => {
@@ -177,7 +177,7 @@ describe("Project", () => {
 			 * Fund project with the minimum capital requested.
 			 */
 			await usdt.connect(owner).approve(project.target, args.minCapital);
-			expect(project.connect(owner).fundProject(args.minCapital)).to.be.revertedWith("Project__Expired");
+			await expect(project.connect(owner).fundProject(args.minCapital)).to.be.revertedWithCustomError(project, "Project__Expired");
 		});
 	});
 
