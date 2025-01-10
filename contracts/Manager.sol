@@ -47,6 +47,7 @@ contract Manager {
 			expiration,
 			goal,
 			minCapital,
+			msg.sender,
 			i_usdtTokenAddress
 		);
 		s_projects.push(newProject);

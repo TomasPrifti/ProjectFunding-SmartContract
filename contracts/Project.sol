@@ -49,6 +49,7 @@ contract Project {
 	 * @param expiration The expiration in seconds for the fundraising's end.
 	 * @param goal The goal to achieve to successfully fund the project.
 	 * @param minCapital The minimum capital requested to finance the project.
+	 * @param targetWallet The address of target wallet.
 	 * @param usdtToken The address of the USDT Token Contract.
 	 */
 	constructor(
@@ -57,6 +58,7 @@ contract Project {
 		uint expiration,
 		uint goal,
 		uint minCapital,
+		address targetWallet,
 		address usdtToken
 	) {
 		i_name = name;
@@ -64,9 +66,9 @@ contract Project {
 		i_expiration = block.timestamp + expiration;
 		i_goal = goal;
 		i_minCapital = minCapital;
+		i_targetWallet = targetWallet;
 		i_usdtTokenAddress = usdtToken;
 
-		i_targetWallet = msg.sender;
 		s_status = ProjectStatus.ACTIVE;
 		initProjectStatusLabel();
 	}

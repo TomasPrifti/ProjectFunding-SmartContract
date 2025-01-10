@@ -29,10 +29,96 @@ describe("Manager", () => {
 
 	describe("constructor", () => {
 		it("Initializes the Manager correctly", async () => {
-			const { manager, usdt, args, owner } = await loadFixture(deployManagerFixture);
+			const { manager, usdt, owner } = await loadFixture(deployManagerFixture);
 
 			expect(await manager.getUSDTTokenAddress()).to.equal(usdt.target);
 		});
 	});
 
+	describe("createProject", () => {
+		it("Create a new project and verify its information", async () => {
+			const { manager, usdt, owner } = await loadFixture(deployManagerFixture);
+
+			// Defining constructor's parameters for the contract to create.
+			const args = {
+				name: "Name of the project",
+				description: "Description of the project",
+				expiration: 60 * 60 * 24 * 30, // 30 days.
+				goal: 10_000 * 10 ** 6, // 10.000 USDT.
+				minCapital: 100 * 10 ** 6, // 100 USDT.
+			};
+
+			// Create a new Project.
+			const transaction = await manager.createProject(
+				args.name,
+				args.description,
+				args.expiration,
+				args.goal,
+				args.minCapital,
+			);
+			const allProjects = await manager.getAllProjects();
+			const newProject = await ethers.getContractAt('Project', allProjects[0]);
+
+			// Calculating the right expiration from the block's timestamp when the contrat has been deployed.
+			const blockOfProject = await ethers.provider.getBlock(transaction.blockHash);
+			const expiration = blockOfProject.timestamp + args.expiration;
+
+			// Checking all the project's information.
+			expect(await newProject.getName()).to.equal(args.name);
+			expect(await newProject.getDescription()).to.equal(args.description);
+			expect(await newProject.getExpiration()).to.equal(expiration);
+			expect(await newProject.getGoal()).to.equal(args.goal);
+			expect(await newProject.getMinCapital()).to.equal(args.minCapital);
+			expect(await newProject.getTargetWallet()).to.equal(owner.address);
+			expect(await newProject.getUSDTTokenAddress()).to.equal(await manager.getUSDTTokenAddress());
+			expect(await newProject.getStatus()).to.equal("Active");
+		});
+	});
+
+	describe("getAllProjects", () => {
+		it("Create new projects and verify the amount managed", async () => {
+			const { manager, usdt, owner } = await loadFixture(deployManagerFixture);
+
+			// Defining constructor's parameters for the contract to create.
+			const args = {
+				name: "Name of the project",
+				description: "Description of the project",
+				expiration: 60 * 60 * 24 * 30, // 30 days.
+				goal: 10_000 * 10 ** 6, // 10.000 USDT.
+				minCapital: 100 * 10 ** 6, // 100 USDT.
+			};
+			let allProjects;
+			let transaction;
+
+			// No project has been created yet.
+			allProjects = await manager.getAllProjects();
+			expect(allProjects.length).to.be.equal(0);
+
+			// Create the first Project.
+			transaction = await manager.createProject(
+				args.name,
+				args.description,
+				args.expiration,
+				args.goal,
+				args.minCapital,
+			);
+
+			// Only one project has been created.
+			allProjects = await manager.getAllProjects();
+			expect(allProjects.length).to.be.equal(1);
+
+			// Create the second Project.
+			transaction = await manager.createProject(
+				args.name,
+				args.description,
+				args.expiration,
+				args.goal,
+				args.minCapital,
+			);
+
+			// Two projects have been created.
+			allProjects = await manager.getAllProjects();
+			expect(allProjects.length).to.be.equal(2);
+		});
+	});
 });
