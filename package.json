@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "deploy": "npx hardhat ignition deploy ignition/modules/deploy.js --network localhost --parameters ignition/parameters.json",
+    "deploy": "npx hardhat ignition deploy ignition/modules/deploy-manager.js --network localhost --parameters ignition/parameters.json",
     "mocks": "npx hardhat ignition deploy ignition/modules/mocks.js --network localhost",
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage"

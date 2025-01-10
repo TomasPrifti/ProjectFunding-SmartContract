@@ -43,12 +43,13 @@ contract Project {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param name Project's name.
 	 * @param description Project's description.
-	 * @param expiration The expiration UNIX Timestamp for the fundraising's end.
+	 * @param expiration The expiration in seconds for the fundraising's end.
 	 * @param goal The goal to achieve to successfully fund the project.
 	 * @param minCapital The minimum capital requested to finance the project.
+	 * @param usdtToken The address of the USDT Token Contract.
 	 */
 	constructor(
 		string memory name,
@@ -72,6 +73,8 @@ contract Project {
 
 	/**
 	 * Function used to fund the project.
+	 *
+	 * @param amount The amount of USDT sent by the caller.
 	 */
 	function fundProject(uint amount) public {
 		if (block.timestamp > i_expiration) {
@@ -112,66 +115,76 @@ contract Project {
 
 	/**
 	 * Function used to understand how much capital the caller has invested.
-	 * 
+	 *
 	 * @return The capital that the caller has invested into the project.
 	 */
-	function getMyCapitalInvested() public view returns(uint) {
+	function getMyCapitalInvested() public view returns (uint) {
 		return s_financiers[msg.sender];
 	}
 
 	/**
 	 * Function used to obtain the current capital invested into the project.
-	 * 
+	 *
 	 * @return The capital invested into the project.
 	 */
-	function getUSDTBalance() public view returns(uint) {
+	function getUSDTBalance() public view returns (uint) {
 		IERC20 usdt = IERC20(i_usdtTokenAddress);
 		return usdt.balanceOf(address(this));
 	}
 
 	/**
 	 * Function used to check if the project is expired.
-	 * 
+	 *
 	 * @return True if the project is already expired, false otherwise.
 	 */
-	function isExpired() public view returns(bool) {
+	function isExpired() public view returns (bool) {
 		return block.timestamp > i_expiration;
 	}
 
 	/**
 	 * Function used to change the project's status.
-	 * 
+	 *
 	 * @return True if the project is already expired, false otherwise.
 	 */
-	function changeStatus() public returns(bool) {
+	function changeStatus() public returns (bool) {
 		bool state = block.timestamp > i_expiration;
 		if (state) {
 			s_status = ProjectStatus.EXPIRED;
 		}
 		return state;
-	}	
+	}
 
 	/* Getters Function */
 
-	function getName() public view returns(string memory) {
+	function getName() public view returns (string memory) {
 		return i_name;
 	}
-	function getDescription() public view returns(string memory) {
+
+	function getDescription() public view returns (string memory) {
 		return i_description;
 	}
-	function getExpiration() public view returns(uint) {
+
+	function getExpiration() public view returns (uint) {
 		return i_expiration;
 	}
-	function getGoal() public view returns(uint) {
+
+	function getGoal() public view returns (uint) {
 		return i_goal;
 	}
-	function getMinCapital() public view returns(uint) {
+
+	function getMinCapital() public view returns (uint) {
 		return i_minCapital;
 	}
-	function getTargetWallet() public view returns(address) {
+
+	function getTargetWallet() public view returns (address) {
 		return i_targetWallet;
 	}
-	function getStatus() public view returns(string memory) {
+
+	function getUSDTTokenAddress() public view returns (address) {
+		return i_usdtTokenAddress;
+	}
+
+	function getStatus() public view returns (string memory) {
 		return s_statusLabel[s_status];
 	}
 

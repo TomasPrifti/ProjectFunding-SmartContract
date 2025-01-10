@@ -1,6 +1,7 @@
 
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
+// This deploy script can be used to deploy a single Project contract.
 module.exports = buildModule("ProjectModule", (module) => {
 	// Defining constructor's parameters for the Contract.
 	const args = {
@@ -22,7 +23,7 @@ module.exports = buildModule("ProjectModule", (module) => {
 		args.usdtToken,
 	]);
 
-	console.log("Contracts deployed successfully!");
+	console.log("Project deployed successfully!");
 
 	return { project };
 });

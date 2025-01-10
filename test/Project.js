@@ -60,6 +60,7 @@ describe("Project", () => {
 			expect(await project.getGoal()).to.equal(args.goal);
 			expect(await project.getMinCapital()).to.equal(args.minCapital);
 			expect(await project.getTargetWallet()).to.equal(owner);
+			expect(await project.getUSDTTokenAddress()).to.equal(usdt.target);
 			expect(await project.getStatus()).to.equal("Active");
 		});
 	});
@@ -189,7 +190,7 @@ describe("Project", () => {
 			await time.increaseTo(expiration + 1n);
 			await project.changeStatus();
 			// Now the project has to be expired.
-			
+
 			expect(await project.isExpired()).to.be.true;
 			expect(await project.getStatus()).to.equal("Expired");
 
