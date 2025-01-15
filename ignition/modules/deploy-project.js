@@ -10,6 +10,7 @@ module.exports = buildModule("ProjectModule", (module) => {
 		expiration: 60 * 60 * 24 * 30, // 30 days.
 		goal: 10_000 * 10 ** 6, // 10.000 USDT.
 		minCapital: 100 * 10 ** 6, // 100 USDT.
+		targetWallet: "0x0000000000000000000000000000000000000000",
 		usdtToken: module.getParameter("MocksUSDT"),
 	};
 
@@ -20,6 +21,7 @@ module.exports = buildModule("ProjectModule", (module) => {
 		args.expiration,
 		args.goal,
 		args.minCapital,
+		args.targetWallet,
 		args.usdtToken,
 	]);
 
