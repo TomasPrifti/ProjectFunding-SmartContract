@@ -1,5 +1,5 @@
 # ProjectFunding-SmartContract
-This project use Hardhat to manage the compilation, deploy and test for an Ethereum Smart Contract.
+This project uses Hardhat to manage the compilation, deploy and test for an Ethereum Smart Contract Project.<br>This repository can work very well with the following one: <a href="https://github.com/TomasPrifti/ProjectFunding-Platform" target="_blank">ProjectFunding-Platform</a>
 
 ## Contracts
 There are 3 contracts:
