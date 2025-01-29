@@ -19,6 +19,9 @@ describe("Project", () => {
 		// MockUSDT Contract Deploy.
 		const usdt = await ethers.deployContract("MockUSDT");
 
+		// Minting some Token for the other Account.
+		await usdt.connect(otherAccount).mintToken();
+
 		// Calculating the expiration.
 		const expirationTime = 60 * 60 * 24 * 30; // 30 days.
 
@@ -44,12 +47,12 @@ describe("Project", () => {
 			args.usdtToken,
 		]);
 
-		return { project, usdt, args, owner };
+		return { project, usdt, args, owner, otherAccount };
 	}
 
 	describe("constructor", () => {
 		it("Initializes the Project correctly", async () => {
-			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 
 			// Calculating the right expiration from the block's timestamp when the contrat has been deployed.
 			const transaction = await project.deploymentTransaction();
@@ -69,7 +72,7 @@ describe("Project", () => {
 
 	describe("fundProject", () => {
 		it("Fund the project for the first time and check if the balance of the contract is correct", async () => {
-			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("100", 6);
 
 			// Initial balance has to be zero.
@@ -88,7 +91,7 @@ describe("Project", () => {
 		});
 
 		it("Fund the project and check if my capital invested is correct", async () => {
-			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("100", 6);
 
 			// The owner has to connect and approve to the USDT Token Contract.
@@ -101,8 +104,39 @@ describe("Project", () => {
 			expect(await project.getMyCapitalInvested()).to.equal(usdtToSend);
 		});
 
+		it("Fund the project and check if the creator has received the capital", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const ownerInitialBalance = await usdt.balanceOf(owner.address);
+			const otherAccountInitialBalance = await usdt.balanceOf(otherAccount.address);
+			const usdtToSend = args.goal / 2;
+			let howManyFunding = 0;
+
+			/**
+			 * 1. First approve and funding.
+			 * The otherAccount has to connect and approve to the USDT Token Contract.
+			 * Fund project with the half of the capital requested.
+			 */
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
+			howManyFunding++;
+			expect(otherAccountInitialBalance - BigInt(usdtToSend * howManyFunding)).to.equal(await usdt.balanceOf(otherAccount.address));
+
+			/**
+			 * 2. Second approve and funding.
+			 * The otherAccount has to connect and approve to the USDT Token Contract.
+			 * Fund project with the half of the capital requested.
+			 */
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
+			howManyFunding++;
+			expect(otherAccountInitialBalance - BigInt(usdtToSend * howManyFunding)).to.equal(await usdt.balanceOf(otherAccount.address));
+
+			// The owner balance has to be equal to its initial balance plus the project's capital.
+			expect(ownerInitialBalance + BigInt(args.goal)).to.equal(await usdt.balanceOf(owner.address));
+		});
+
 		it("Fund the project and check if the event InvestedInProject and ProjectFunded are emitted", async () => {
-			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = args.goal / 2;
 
 			/**
@@ -123,7 +157,7 @@ describe("Project", () => {
 		});
 
 		it("Testing the revert Project__NotActive", async () => {
-			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("5000", 6);
 
 			/**
@@ -157,7 +191,7 @@ describe("Project", () => {
 		});
 
 		it("Testing the revert Project__NotEnoughCapitalInvested", async () => {
-			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("10", 6);
 
 			/**
@@ -169,7 +203,7 @@ describe("Project", () => {
 		});
 
 		it("Testing the revert Project__InsufficientAmount", async () => {
-			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 
 			// Owner balance.
 			const ownerBalance = await usdt.balanceOf(owner.address);
@@ -184,8 +218,7 @@ describe("Project", () => {
 		});
 
 		it("Testing the revert Project__Expired", async () => {
-			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
-			//const usdtToSend = ethers.parseUnits("100", 6); // questo è bigint
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 
 			// Make the time passes.
 			const expiration = await project.getExpiration();
@@ -207,7 +240,7 @@ describe("Project", () => {
 
 	describe("getUSDTBalance", () => {
 		it("Testing the function getUSDTBalance", async () => {
-			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("100", 6);
 
 			// Initial balance has to be zero.
@@ -228,7 +261,7 @@ describe("Project", () => {
 
 	describe("isExpired", () => {
 		it("Testing the function isExpired", async () => {
-			const { project, usdt, args, owner } = await loadFixture(deployProjectFixture);
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 
 			// Check status of current time and expiration at the project's creation.
 			const currentTime = BigInt(await time.latest());

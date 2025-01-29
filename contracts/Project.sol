@@ -110,6 +110,9 @@ contract Project {
 
 		// Check if the goal is reached.
 		if (usdt.balanceOf(address(this)) >= i_goal) {
+			// Transfer from the Contract to the TargetWallet.
+			usdt.transfer(i_targetWallet, usdt.balanceOf(address(this)));
+
 			s_status = ProjectStatus.FUNDED;
 			emit ProjectFunded(address(this));
 		}
