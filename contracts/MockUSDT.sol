@@ -15,7 +15,7 @@ contract MockUSDT is ERC20 {
 	 * Constructor.
 	 */	
 	constructor() ERC20("Tether USD", "USDT") {
-		_mint(msg.sender, 10_000 * 10 ** decimals());
+		_mint(msg.sender, 1_000_000 * 10 ** decimals());
 	}
 
 	/**
