@@ -10,10 +10,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  * @notice This Smart Contract is used to simulate a real USDT Contract.
  */
 contract MockUSDT is ERC20 {
-	
 	/**
 	 * Constructor.
-	 */	
+	 */
 	constructor() ERC20("Tether USD", "USDT") {
 		_mint(msg.sender, 1_000_000 * 10 ** decimals());
 	}
@@ -23,5 +22,12 @@ contract MockUSDT is ERC20 {
 	 */
 	function decimals() public pure override returns (uint8) {
 		return 6;
+	}
+
+	/**
+	 * Function used to mint some USDT Token.
+	 */
+	function mintToken() public {
+		_mint(msg.sender, 100_000 * 10 ** decimals());
 	}
 }
