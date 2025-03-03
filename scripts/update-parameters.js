@@ -24,7 +24,7 @@ async function main() {
 	console.log("Writing on file...");
 	const contractAddressInfo = JSON.parse(fs.readFileSync(`ignition/deployments/chain-${chainId}/deployed_addresses.json`, "utf8"));
 	const contractAddress = contractAddressInfo["MocksModule#MockUSDT"] ?? '';
-	currentParameters["$global"]["MockUSDT"] = contractAddress;
+	currentParameters["$global"][`${chainId}-USDT`] = contractAddress;
 	currentAddresses[chainId]["USDT"] = contractAddress;
 	fs.writeFileSync("ignition/parameters.json", JSON.stringify(currentParameters));
 	fs.writeFileSync(process.env.FRONT_END_ADDRESSES_FILE, JSON.stringify(currentAddresses));

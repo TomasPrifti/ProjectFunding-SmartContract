@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "deploy-localhost": "bash ./bash/deploy-localhost.sh",
+    "deploy-testnet": "bash ./bash/deploy-testnet.sh",
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage"
   },
