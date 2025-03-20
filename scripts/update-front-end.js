@@ -17,6 +17,7 @@ async function main() {
 
 	const manager = await ethers.getContractFactory("Manager");
 	const project = await ethers.getContractFactory("Project");
+	const usdt = await ethers.getContractFactory("MockUSDT");
 	const chainId = network.config.chainId;
 
 	// Updating Addresses File.
@@ -25,8 +26,10 @@ async function main() {
 
 	console.log("Writing on file...");
 	const contractAddressInfo = JSON.parse(fs.readFileSync(`ignition/deployments/chain-${chainId}/deployed_addresses.json`, "utf8"));
-	const contractAddress = contractAddressInfo["ManagerModule#Manager"] ?? '';
-	currentAddresses[chainId]["Manager"] = contractAddress;
+	const contractAddressManager = contractAddressInfo["ManagerModule#Manager"] ?? '';
+	const contractAddressUSDT = contractAddressInfo["MocksModule#MockUSDT"] ?? '';
+	currentAddresses[chainId]["Manager"] = contractAddressManager;
+	currentAddresses[chainId]["USDT"] = contractAddressUSDT;
 	fs.writeFileSync(process.env.FRONT_END_ADDRESSES_FILE, JSON.stringify(currentAddresses));
 	console.log("Writing successfully!");
 
@@ -37,6 +40,7 @@ async function main() {
 	console.log("Writing on file...");
 	currentABIs[chainId]["Manager"] = manager.interface.fragments;
 	currentABIs[chainId]["Project"] = project.interface.fragments;
+	currentABIs[chainId]["USDT"] = usdt.interface.fragments;
 	fs.writeFileSync(process.env.FRONT_END_ABI_FILE, JSON.stringify(currentABIs));
 	console.log("Writing successfully!");
 };
