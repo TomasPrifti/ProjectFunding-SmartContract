@@ -30,22 +30,16 @@ contract Manager {
 	 *
 	 * @param name Project's name.
 	 * @param description Project's description.
-	 * @param expiration The expiration in seconds for the fundraising's end.
-	 * @param goal The goal to achieve to successfully fund the project.
 	 * @param minCapital The minimum capital requested to finance the project.
 	 */
 	function createProject(
 		string memory name,
 		string memory description,
-		uint expiration,
-		uint goal,
 		uint minCapital
 	) public {
 		Project newProject = new Project(
 			name,
 			description,
-			expiration,
-			goal,
 			minCapital,
 			msg.sender,
 			i_usdtTokenAddress

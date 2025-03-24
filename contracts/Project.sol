@@ -5,9 +5,16 @@ pragma solidity ^0.8.28;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 error Project__NotEnoughCapitalInvested();
-error Project__NotActive();
 error Project__InsufficientAmount();
-error Project__Expired();
+
+error Project__IsOwner();
+error Project__NotOwner();
+
+error Project__TransactionNotExist();
+error Project__TransactionNotPending();
+error Project__TransactionAlreadyExecuted();
+error Project__TransactionAlreadyConfirmed();
+error Project__TransactionNotEnoughConfirmations();
 
 /**
  * @title A project for decentralized crowdfunding
@@ -16,61 +23,75 @@ error Project__Expired();
  */
 contract Project {
 	// Defining a ENUM to manage the project's status.
-	enum ProjectStatus {
-		ACTIVE,
-		FUNDED,
-		EXPIRED
+	enum TransactionStatus {
+		PENDING,
+		EXECUTED,
+		REVOKED
+	}
+
+	// Defining the structure of the Transaction.
+	struct Transaction {
+		address to;
+		uint value;
+		bool executed;
+		uint numConfirmations;
+		TransactionStatus status;
 	}
 
 	// Immutable variables.
 	string private i_name;
 	string private i_description;
-	uint private immutable i_expiration;
-	uint private immutable i_goal;
 	uint private immutable i_minCapital;
-	address private immutable i_targetWallet;
+	address private immutable i_owner;
 	address private immutable i_usdtTokenAddress;
 
 	// Storage variables.
-	ProjectStatus private s_status;
-	mapping(ProjectStatus => string) private s_statusLabel;
-	mapping(address => uint) private s_financiers;
+	mapping(TransactionStatus => string) s_statusLabel;
+
+	address[] private s_financiersAddresses;
+	mapping(address => bool) private s_financiersExist;
+	mapping(address => uint) private s_financiersCapitalInvested;
+
+	Transaction[] private s_transactions;
+	mapping(uint256 => mapping(address => bool)) private s_isConfirmed;
 
 	// Event used to notify that the user has invested successfully into the project.
 	event InvestedInProject(address indexed financier, uint indexed capital);
-	// Event used to notify that the project has been funded successfully.
-	event ProjectFunded(address indexed contractAddress);
+	// Event used to notify that the project has been EXECUTED successfully.
+	event TransactionExecuted(address indexed contractAddress);
+
+	/* Modifiers */
+
+	modifier onlyOwner() {
+		if (i_owner != msg.sender) {
+			revert Project__NotOwner();
+		}
+		_;
+	}
 
 	/**
 	 * Constructor.
 	 *
 	 * @param name Project's name.
 	 * @param description Project's description.
-	 * @param expiration The expiration in seconds for the fundraising's end.
-	 * @param goal The goal to achieve to successfully fund the project.
 	 * @param minCapital The minimum capital requested to finance the project.
-	 * @param targetWallet The address of target wallet.
+	 * @param owner The address of the owner.
 	 * @param usdtToken The address of the USDT Token Contract.
 	 */
 	constructor(
 		string memory name,
 		string memory description,
-		uint expiration,
-		uint goal,
 		uint minCapital,
-		address targetWallet,
+		address owner,
 		address usdtToken
 	) {
 		i_name = name;
 		i_description = description;
-		i_expiration = block.timestamp + expiration;
-		i_goal = goal;
 		i_minCapital = minCapital;
-		i_targetWallet = targetWallet;
+		i_owner = owner;
 		i_usdtTokenAddress = usdtToken;
 
-		s_status = ProjectStatus.ACTIVE;
-		initProjectStatusLabel();
+		TransactionStatusLabel();
 	}
 
 	/**
@@ -79,12 +100,6 @@ contract Project {
 	 * @param amount The amount of USDT sent by the caller.
 	 */
 	function fundProject(uint amount) public {
-		if (block.timestamp > i_expiration) {
-			revert Project__Expired();
-		}
-		if (s_status != ProjectStatus.ACTIVE) {
-			revert Project__NotActive();
-		}
 		if (amount < i_minCapital) {
 			revert Project__NotEnoughCapitalInvested();
 		}
@@ -104,18 +119,91 @@ contract Project {
 			revert Project__InsufficientAmount();
 		}
 
-		// Saving the amount financied and emit the event.
-		s_financiers[msg.sender] += amount;
-		emit InvestedInProject(msg.sender, amount);
-
-		// Check if the goal is reached.
-		if (usdt.balanceOf(address(this)) >= i_goal) {
-			// Transfer from the Contract to the TargetWallet.
-			usdt.transfer(i_targetWallet, usdt.balanceOf(address(this)));
-
-			s_status = ProjectStatus.FUNDED;
-			emit ProjectFunded(address(this));
+		// Saving the amount invested and save the financier.
+		s_financiersCapitalInvested[msg.sender] += amount;
+		if (!s_financiersExist[msg.sender]) {
+			s_financiersExist[msg.sender] = true;
+			s_financiersAddresses.push(msg.sender);
 		}
+
+		emit InvestedInProject(msg.sender, amount);
+	}
+
+	function createTransaction(address target, uint amount) public onlyOwner {
+		uint256 txIndex = s_transactions.length;
+
+		s_transactions.push(
+			Transaction({
+				to: target,
+				value: amount,
+				executed: false,
+				numConfirmations: 0,
+				status: TransactionStatus.PENDING
+			})
+		);
+
+		//emit createTransaction(msg.sender, txIndex, target, amount);
+	}
+
+	function signTransaction(uint256 txIndex) public {
+		if (i_owner == msg.sender) {
+			revert Project__IsOwner();
+		}
+		if (txIndex >= s_transactions.length) {
+			revert Project__TransactionNotExist();
+		}
+		if (s_transactions[txIndex].executed) {
+			revert Project__TransactionAlreadyExecuted();
+		}
+		if (s_isConfirmed[txIndex][msg.sender]) {
+			revert Project__TransactionAlreadyConfirmed();
+		}
+		if (s_transactions[txIndex].status != TransactionStatus.PENDING) {
+			revert Project__TransactionNotPending();
+		}
+
+		s_transactions[txIndex].numConfirmations += 1;
+		s_isConfirmed[txIndex][msg.sender] = true;
+
+		//emit signTransaction(msg.sender, txIndex);
+
+		if (
+			s_transactions[txIndex].numConfirmations <
+			s_financiersAddresses.length
+		) {
+			revert Project__TransactionNotEnoughConfirmations();
+		}
+		s_transactions[txIndex].executed = true;
+
+		IERC20 usdt = IERC20(i_usdtTokenAddress);
+
+		if (usdt.balanceOf(address(this)) >= s_transactions[txIndex].value) {
+			// Transfer from the Contract to the TargetWallet.
+			usdt.transfer(
+				s_transactions[txIndex].to,
+				usdt.balanceOf(address(this))
+			);
+
+			s_transactions[txIndex].status = TransactionStatus.EXECUTED;
+			//emit TransactionExecuted(address(this));
+			//emit ExecuteTransaction(msg.sender, _txIndex);
+		}
+	}
+
+	/**
+	 * Function used to revoke a specific transaction already created by the owner.
+	 *
+	 */
+	function revokeTransaction(uint256 txIndex) public onlyOwner {
+		if (txIndex >= s_transactions.length) {
+			revert Project__TransactionNotExist();
+		}
+		if (s_transactions[txIndex].status != TransactionStatus.PENDING) {
+			revert Project__TransactionNotPending();
+		}
+
+		s_transactions[txIndex].status = TransactionStatus.REVOKED;
+		//emit ExecuteTransaction(msg.sender, _txIndex);
 	}
 
 	/**
@@ -124,7 +212,7 @@ contract Project {
 	 * @return The capital that the caller has invested into the project.
 	 */
 	function getMyCapitalInvested() public view returns (uint) {
-		return s_financiers[msg.sender];
+		return s_financiersCapitalInvested[msg.sender];
 	}
 
 	/**
@@ -138,25 +226,25 @@ contract Project {
 	}
 
 	/**
-	 * Function used to check if the project is expired.
+	 * Function used to obtain the number of the transactions created.
 	 *
-	 * @return True if the project is already expired, false otherwise.
+	 * @return The number of the transactions created.
 	 */
-	function isExpired() public view returns (bool) {
-		return block.timestamp > i_expiration;
+	function getTransactionCount() public view returns (uint256) {
+		return s_transactions.length;
 	}
 
 	/**
-	 * Function used to change the project's status.
+	 * Function used to obtain the number of the transactions created.
 	 *
-	 * @return True if the project is already expired, false otherwise.
+	 * @param txIndex The index of the transaction to retrieve.
+	 *
+	 * @return The transaction requested.
 	 */
-	function changeStatus() public returns (bool) {
-		bool state = block.timestamp > i_expiration;
-		if (state) {
-			s_status = ProjectStatus.EXPIRED;
-		}
-		return state;
+	function getTransaction(
+		uint256 txIndex
+	) public view returns (Transaction memory) {
+		return s_transactions[txIndex];
 	}
 
 	/* Getters Function */
@@ -169,35 +257,23 @@ contract Project {
 		return i_description;
 	}
 
-	function getExpiration() public view returns (uint) {
-		return i_expiration;
-	}
-
-	function getGoal() public view returns (uint) {
-		return i_goal;
-	}
-
 	function getMinCapital() public view returns (uint) {
 		return i_minCapital;
-	}
-
-	function getTargetWallet() public view returns (address) {
-		return i_targetWallet;
 	}
 
 	function getUSDTTokenAddress() public view returns (address) {
 		return i_usdtTokenAddress;
 	}
 
-	function getStatus() public view returns (string memory) {
-		return s_statusLabel[s_status];
+	function getFinanciers() public view returns (address[] memory) {
+		return s_financiersAddresses;
 	}
 
 	/* Private Functions */
 
-	function initProjectStatusLabel() private {
-		s_statusLabel[ProjectStatus.ACTIVE] = "Active";
-		s_statusLabel[ProjectStatus.FUNDED] = "Funded";
-		s_statusLabel[ProjectStatus.EXPIRED] = "Expired";
+	function TransactionStatusLabel() private {
+		s_statusLabel[TransactionStatus.PENDING] = "Pending";
+		s_statusLabel[TransactionStatus.EXECUTED] = "Executed";
+		s_statusLabel[TransactionStatus.REVOKED] = "Revoked";
 	}
 }
