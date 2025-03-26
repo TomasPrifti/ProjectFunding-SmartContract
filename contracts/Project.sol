@@ -143,6 +143,12 @@ contract Project {
 		emit InvestedInProject(msg.sender, amount);
 	}
 
+	/**
+	 * Function used to create a new transaction only by the owner.
+	 *
+	 * @param target The target address where to send the funds.
+	 * @param amount The desired amount to send.
+	 */
 	function createTransaction(address target, uint amount) public onlyOwner {
 		uint256 txIndex = s_transactions.length;
 
@@ -165,6 +171,11 @@ contract Project {
 		);
 	}
 
+	/**
+	 * Function used to sign a specific transaction already created by the owner.
+	 *
+	 * @param txIndex The index of the transaction to sign.
+	 */
 	function signTransaction(uint256 txIndex) public {
 		if (i_owner == msg.sender) {
 			revert Project__IsOwner();
