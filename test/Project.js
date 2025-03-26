@@ -193,4 +193,15 @@ describe("Project", () => {
 			expect(await project.TransactionStatusLabel(transaction.status)).to.equal("Pending");
 		});
 	});
+
+	describe("TransactionStatusLabel", () => {
+		it("Testing the function TransactionStatusLabel", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+
+			// Checking all the labels that can be obtained by the function.
+			expect(await project.TransactionStatusLabel(0)).to.equal("Pending");
+			expect(await project.TransactionStatusLabel(1)).to.equal("Executed");
+			expect(await project.TransactionStatusLabel(2)).to.equal("Revoked");
+		});
+	});
 });
