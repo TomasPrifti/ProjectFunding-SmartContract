@@ -261,6 +261,10 @@ contract Project {
 		return i_minCapital;
 	}
 
+	function getOwner() public view returns (address) {
+		return i_owner;
+	}
+
 	function getUSDTTokenAddress() public view returns (address) {
 		return i_usdtTokenAddress;
 	}
