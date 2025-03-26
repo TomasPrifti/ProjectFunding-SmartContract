@@ -172,4 +172,25 @@ describe("Project", () => {
 			expect(await project.getTransactionCount()).to.equal(2);
 		});
 	});
+
+	describe("getTransaction", () => {
+		it("Testing the function getTransaction", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+
+			// Creation of a new transaction.
+			await expect(project.connect(owner).createTransaction(otherAccount, usdtToSend)).to.emit(project, "TransactionCreated");
+
+			// Retrieving the first transaction.
+			const transaction = await project.getTransaction(0);
+
+			// Checking all the information of the transaction already created.
+			expect(transaction.to).to.equal(otherAccount);
+			expect(transaction.value).to.equal(usdtToSend);
+			expect(transaction.executed).to.false;
+			expect(transaction.numConfirmations).to.equal(0);
+			expect(transaction.status).to.equal(0);
+			expect(await project.TransactionStatusLabel(transaction.status)).to.equal("Pending");
+		});
+	});
 });

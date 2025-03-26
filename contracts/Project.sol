@@ -58,7 +58,13 @@ contract Project {
 	// Event used to notify that the user has invested successfully into the project.
 	event InvestedInProject(address indexed financier, uint indexed capital);
 	// Event used to notify that the owner has created successfully a new transaction.
-	event TransactionCreated(address owner, address indexed contractAddress, uint indexed txIndex, address indexed target, uint amount);
+	event TransactionCreated(
+		address owner,
+		address indexed contractAddress,
+		uint indexed txIndex,
+		address indexed target,
+		uint amount
+	);
 	// Event used to notify that the transaction has been executed successfully.
 	event TransactionExecuted(address indexed contractAddress);
 
@@ -92,8 +98,6 @@ contract Project {
 		i_minCapital = minCapital;
 		i_owner = owner;
 		i_usdtTokenAddress = usdtToken;
-
-		TransactionStatusLabel();
 	}
 
 	/**
@@ -144,7 +148,13 @@ contract Project {
 			})
 		);
 
-		emit TransactionCreated(i_owner, address(this), txIndex, target, amount);
+		emit TransactionCreated(
+			i_owner,
+			address(this),
+			txIndex,
+			target,
+			amount
+		);
 	}
 
 	function signTransaction(uint256 txIndex) public {
@@ -237,7 +247,7 @@ contract Project {
 	}
 
 	/**
-	 * Function used to obtain the number of the transactions created.
+	 * Function used to obtain a specific transaction given its index.
 	 *
 	 * @param txIndex The index of the transaction to retrieve.
 	 *
@@ -247,6 +257,31 @@ contract Project {
 		uint256 txIndex
 	) public view returns (Transaction memory) {
 		return s_transactions[txIndex];
+	}
+
+	/**
+	 * Function used to obtain a label given the status of a transaction.
+	 *
+	 * @param status The status of the transaction.
+	 *
+	 * @return The label corresponding to the status.
+	 */
+	function TransactionStatusLabel(
+		TransactionStatus status
+	) public pure returns (string memory) {
+		string memory output = "Error";
+
+		if (status == TransactionStatus.PENDING) {
+			output = "Pending";
+		}
+		if (status == TransactionStatus.EXECUTED) {
+			output = "Executed";
+		}
+		if (status == TransactionStatus.REVOKED) {
+			output = "Revoked";
+		}
+
+		return output;
 	}
 
 	/* Getters Function */
@@ -273,13 +308,5 @@ contract Project {
 
 	function getFinanciers() public view returns (address[] memory) {
 		return s_financiersAddresses;
-	}
-
-	/* Private Functions */
-
-	function TransactionStatusLabel() private {
-		s_statusLabel[TransactionStatus.PENDING] = "Pending";
-		s_statusLabel[TransactionStatus.EXECUTED] = "Executed";
-		s_statusLabel[TransactionStatus.REVOKED] = "Revoked";
 	}
 }
