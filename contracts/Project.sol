@@ -55,6 +55,8 @@ contract Project {
 	Transaction[] private s_transactions;
 	mapping(uint256 => mapping(address => bool)) private s_isConfirmed;
 
+	/* Events */
+
 	// Event used to notify that the user has invested successfully into the project.
 	event InvestedInProject(address indexed financier, uint indexed capital);
 	// Event used to notify that the owner has created successfully a new transaction.
@@ -67,6 +69,12 @@ contract Project {
 	);
 	// Event used to notify that the transaction has been executed successfully.
 	event TransactionExecuted(address indexed contractAddress);
+	// Event used to notify that the transaction has been revoked successfully.
+	event TransactionRevoked(
+		address owner,
+		address indexed contractAddress,
+		uint indexed txIndex
+	);
 
 	/* Modifiers */
 
@@ -205,6 +213,7 @@ contract Project {
 	/**
 	 * Function used to revoke a specific transaction already created by the owner.
 	 *
+	 * @param txIndex The index of the transaction to retrieve.
 	 */
 	function revokeTransaction(uint256 txIndex) public onlyOwner {
 		if (txIndex >= s_transactions.length) {
@@ -215,7 +224,8 @@ contract Project {
 		}
 
 		s_transactions[txIndex].status = TransactionStatus.REVOKED;
-		//emit ExecuteTransaction(msg.sender, _txIndex);
+
+		emit TransactionRevoked(i_owner, address(this), txIndex);
 	}
 
 	/**

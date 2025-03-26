@@ -167,6 +167,62 @@ describe("Project", () => {
 		});
 	});
 
+	describe("revokeTransaction", () => {
+		it("Revoke a transaction and check if successfully revoked", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+			let transaction;
+
+			// Creation of a new transaction.
+			await project.connect(owner).createTransaction(otherAccount, usdtToSend);
+			await expect(project.connect(owner).createTransaction(otherAccount, usdtToSend)).to.emit(project, "TransactionCreated");
+
+			// Retrieving the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking the status of the transaction already created.
+			expect(transaction.status).to.equal(0);
+			expect(await project.TransactionStatusLabel(transaction.status)).to.equal("Pending");
+
+			// Revoking the transaction.
+			await expect(project.connect(owner).revokeTransaction(0)).to.emit(project, "TransactionRevoked");
+
+			// Retrieving again the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking the status of the transaction already revoked.
+			expect(transaction.status).to.equal(2);
+			expect(await project.TransactionStatusLabel(transaction.status)).to.equal("Revoked");
+		});
+
+		it("Try to revoke a transaction that doesn't exist", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+
+			await expect(project.connect(owner).revokeTransaction(0)).to.be.revertedWithCustomError(project, "Project__TransactionNotExist");
+		});
+
+		it("Try to revoke a transaction that is not pending", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+
+			// Creation of a new transaction.
+			await project.connect(owner).createTransaction(otherAccount, usdtToSend);
+
+			// Revoking the transaction.
+			await project.connect(owner).revokeTransaction(0);
+			
+			// Retrieving the first transaction.
+			const transaction = await project.getTransaction(0);
+
+			// Checking the status of the transaction already revoked.
+			expect(transaction.status).to.equal(2);
+			expect(await project.TransactionStatusLabel(transaction.status)).to.equal("Revoked");
+
+			// Try to revoke again the same transaction.
+			await expect(project.connect(owner).revokeTransaction(0)).to.be.revertedWithCustomError(project, "Project__TransactionNotPending");
+		});
+	});
+
 	describe("getUSDTBalance", () => {
 		it("Testing the function getUSDTBalance", async () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
