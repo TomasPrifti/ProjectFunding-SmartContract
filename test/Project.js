@@ -89,6 +89,43 @@ describe("Project", () => {
 			expect(await project.getMyCapitalInvested()).to.equal(usdtToSend);
 		});
 
+		it("Fund the project and check if the financiers are correct", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+
+			// Retrieving the financiers.
+			let financiers = await project.getFinanciers();
+			expect(financiers.length).to.equal(0);
+
+			/**
+			 * The users have to connect and approve to the USDT Token Contract.
+			 * Then fund the project.
+			 */
+
+			// First user.
+			await usdt.connect(owner).approve(project.target, usdtToSend);
+			await project.connect(owner).fundProject(usdtToSend);
+
+			// Retrieving the financiers.
+			financiers = await project.getFinanciers();
+
+			// Checking all the address associated with the financiers.
+			expect(financiers.length).to.equal(1);
+			expect(financiers[0]).to.equal(owner);
+
+			// Second user.
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
+
+			// Retrieving the financiers.
+			financiers = await project.getFinanciers();
+
+			// Checking all the address associated with the financiers.
+			expect(financiers.length).to.equal(2);
+			expect(financiers[0]).to.equal(owner);
+			expect(financiers[1]).to.equal(otherAccount);
+		});
+
 		it("Fund the project and check if the event InvestedInProject is emitted", async () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("100", 6);
