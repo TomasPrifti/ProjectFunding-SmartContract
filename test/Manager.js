@@ -43,8 +43,6 @@ describe("Manager", () => {
 			const args = {
 				name: "Name of the project",
 				description: "Description of the project",
-				expiration: 60 * 60 * 24 * 30, // 30 days.
-				goal: 10_000 * 10 ** 6, // 10.000 USDT.
 				minCapital: 100 * 10 ** 6, // 100 USDT.
 			};
 
@@ -52,26 +50,16 @@ describe("Manager", () => {
 			const transaction = await manager.createProject(
 				args.name,
 				args.description,
-				args.expiration,
-				args.goal,
 				args.minCapital,
 			);
 			const allProjects = await manager.getAllProjects();
 			const newProject = await ethers.getContractAt('Project', allProjects[0]);
 
-			// Calculating the right expiration from the block's timestamp when the contrat has been deployed.
-			const blockOfProject = await ethers.provider.getBlock(transaction.blockHash);
-			const expiration = blockOfProject.timestamp + args.expiration;
-
 			// Checking all the project's information.
 			expect(await newProject.getName()).to.equal(args.name);
 			expect(await newProject.getDescription()).to.equal(args.description);
-			expect(await newProject.getExpiration()).to.equal(expiration);
-			expect(await newProject.getGoal()).to.equal(args.goal);
 			expect(await newProject.getMinCapital()).to.equal(args.minCapital);
-			expect(await newProject.getTargetWallet()).to.equal(owner.address);
 			expect(await newProject.getUSDTTokenAddress()).to.equal(await manager.getUSDTTokenAddress());
-			expect(await newProject.getStatus()).to.equal("Active");
 		});
 	});
 
@@ -83,8 +71,6 @@ describe("Manager", () => {
 			const args = {
 				name: "Name of the project",
 				description: "Description of the project",
-				expiration: 60 * 60 * 24 * 30, // 30 days.
-				goal: 10_000 * 10 ** 6, // 10.000 USDT.
 				minCapital: 100 * 10 ** 6, // 100 USDT.
 			};
 			let allProjects;
@@ -98,8 +84,6 @@ describe("Manager", () => {
 			transaction = await manager.createProject(
 				args.name,
 				args.description,
-				args.expiration,
-				args.goal,
 				args.minCapital,
 			);
 
@@ -111,8 +95,6 @@ describe("Manager", () => {
 			transaction = await manager.createProject(
 				args.name,
 				args.description,
-				args.expiration,
-				args.goal,
 				args.minCapital,
 			);
 
