@@ -150,4 +150,26 @@ describe("Project", () => {
 			expect(await project.getUSDTBalance()).to.equal(usdtToSend);
 		});
 	});
+
+	describe("getTransactionCount", () => {
+		it("Testing the function getTransactionCount", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+
+			// Initial count has to be zero.
+			expect(await project.getTransactionCount()).to.equal(0);
+
+			// Creation of a new transaction.
+			await expect(project.connect(owner).createTransaction(otherAccount, usdtToSend)).to.emit(project, "TransactionCreated");
+
+			// Initial count has to be one.
+			expect(await project.getTransactionCount()).to.equal(1);
+
+			// Creation of a new transaction.
+			await expect(project.connect(owner).createTransaction(otherAccount, usdtToSend)).to.emit(project, "TransactionCreated");
+
+			// Initial count has to be two.
+			expect(await project.getTransactionCount()).to.equal(2);
+		});
+	});
 });

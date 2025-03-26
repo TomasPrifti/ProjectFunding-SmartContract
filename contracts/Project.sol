@@ -57,7 +57,9 @@ contract Project {
 
 	// Event used to notify that the user has invested successfully into the project.
 	event InvestedInProject(address indexed financier, uint indexed capital);
-	// Event used to notify that the project has been EXECUTED successfully.
+	// Event used to notify that the owner has created successfully a new transaction.
+	event TransactionCreated(address owner, address indexed contractAddress, uint indexed txIndex, address indexed target, uint amount);
+	// Event used to notify that the transaction has been executed successfully.
 	event TransactionExecuted(address indexed contractAddress);
 
 	/* Modifiers */
@@ -142,7 +144,7 @@ contract Project {
 			})
 		);
 
-		//emit createTransaction(msg.sender, txIndex, target, amount);
+		emit TransactionCreated(i_owner, address(this), txIndex, target, amount);
 	}
 
 	function signTransaction(uint256 txIndex) public {
