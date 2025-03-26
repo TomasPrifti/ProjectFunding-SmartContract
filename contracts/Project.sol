@@ -183,39 +183,42 @@ contract Project {
 		if (txIndex >= s_transactions.length) {
 			revert Project__TransactionNotExist();
 		}
-		if (s_transactions[txIndex].executed) {
+
+		Transaction storage transaction = s_transactions[txIndex];
+
+		if (transaction.executed) {
 			revert Project__TransactionAlreadyExecuted();
 		}
 		if (s_isConfirmed[txIndex][msg.sender]) {
 			revert Project__TransactionAlreadyConfirmed();
 		}
-		if (s_transactions[txIndex].status != TransactionStatus.PENDING) {
+		if (transaction.status != TransactionStatus.PENDING) {
 			revert Project__TransactionNotPending();
 		}
 
-		s_transactions[txIndex].numConfirmations += 1;
+		transaction.numConfirmations += 1;
 		s_isConfirmed[txIndex][msg.sender] = true;
 
 		//emit signTransaction(msg.sender, txIndex);
 
 		if (
-			s_transactions[txIndex].numConfirmations <
+			transaction.numConfirmations <
 			s_financiersAddresses.length
 		) {
 			revert Project__TransactionNotEnoughConfirmations();
 		}
-		s_transactions[txIndex].executed = true;
+		transaction.executed = true;
 
 		IERC20 usdt = IERC20(i_usdtTokenAddress);
 
-		if (usdt.balanceOf(address(this)) >= s_transactions[txIndex].value) {
+		if (usdt.balanceOf(address(this)) >= transaction.value) {
 			// Transfer from the Contract to the TargetWallet.
 			usdt.transfer(
-				s_transactions[txIndex].to,
+				transaction.to,
 				usdt.balanceOf(address(this))
 			);
 
-			s_transactions[txIndex].status = TransactionStatus.EXECUTED;
+			transaction.status = TransactionStatus.EXECUTED;
 			//emit TransactionExecuted(address(this));
 			//emit ExecuteTransaction(msg.sender, _txIndex);
 		}
