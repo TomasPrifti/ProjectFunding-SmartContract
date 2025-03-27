@@ -167,6 +167,36 @@ describe("Project", () => {
 		});
 	});
 
+	describe("createTransaction", () => {
+		it("Create a transaction and check if successfully created", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+			let transaction;
+
+			// Check the count of the transactions.
+			expect(await project.getTransactionCount()).to.equal(0);
+
+			// Try to retrie the first transaction.
+			await expect(project.getTransaction(0)).to.be.reverted;
+
+			// Approve and fund the project.
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
+
+			// Creation of a new transaction.
+			await project.connect(owner).createTransaction(otherAccount, usdtToSend);
+
+			// Check again the count of the transactions.
+			expect(await project.getTransactionCount()).to.equal(1);
+
+			// Retrieving again the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking again the existence of the first transaction.
+			expect(transaction).to.not.be.null;
+		});
+	});
+
 	describe("signTransaction", () => {
 		it("Sign a transaction and check if successfully signed", async () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
