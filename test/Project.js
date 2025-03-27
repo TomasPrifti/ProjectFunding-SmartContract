@@ -195,6 +195,14 @@ describe("Project", () => {
 			// Checking again the existence of the first transaction.
 			expect(transaction).to.not.be.null;
 		});
+
+		it("Try to create a transaction with a negative amount", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("0", 6);
+
+			// Try to create a new transaction.
+			await expect(project.connect(owner).createTransaction(otherAccount, usdtToSend)).to.be.revertedWithCustomError(project, "Project__InsufficientAmount");
+		});
 	});
 
 	describe("signTransaction", () => {
