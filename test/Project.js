@@ -43,6 +43,29 @@ describe("Project", () => {
 		return { project, usdt, args, owner, otherAccount };
 	}
 
+	describe("Modifier onlyOwner", () => {
+		it("Try to call a function that only the owner is capable of", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+
+			// Check the count of the transactions.
+			expect(await project.getTransactionCount()).to.equal(0);
+
+			// Approve and fund the project.
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
+
+			// Try to create a new transaction from other account.
+			await expect(project.connect(otherAccount).createTransaction(owner, usdtToSend)).to.be.revertedWithCustomError(project, "Project__NotOwner");
+
+			// Creation of a new transaction.
+			await project.connect(owner).createTransaction(otherAccount, usdtToSend);
+
+			// Check again the count of the transactions.
+			expect(await project.getTransactionCount()).to.equal(1);
+		});
+	});
+
 	describe("constructor", () => {
 		it("Initializes the Project correctly", async () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
