@@ -196,6 +196,13 @@ describe("Project", () => {
 			expect(transaction.numConfirmations).to.equal(1);
 		});
 
+		it("Try to sign a transaction that doesn't exist", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+
+			// Try to execute a transaction that doesn't exist.
+			await expect(project.connect(otherAccount).signTransaction(0)).to.be.revertedWithCustomError(project, "Project__TransactionNotExist");
+		});
+
 		it("Try to sign a transaction that is already executed", async () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("100", 6);
