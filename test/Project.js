@@ -184,7 +184,7 @@ describe("Project", () => {
 			await project.connect(otherAccount).fundProject(usdtToSend);
 
 			// Creation of a new transaction.
-			await project.connect(owner).createTransaction(otherAccount, usdtToSend);
+			await expect(project.connect(owner).createTransaction(otherAccount, usdtToSend)).to.emit(project, "TransactionCreated");
 
 			// Check again the count of the transactions.
 			expect(await project.getTransactionCount()).to.equal(1);
@@ -233,7 +233,7 @@ describe("Project", () => {
 			expect(transaction.numConfirmations).to.equal(0);
 
 			// Signing the transaction.
-			await project.connect(otherAccount).signTransaction(0);
+			await expect(project.connect(otherAccount).signTransaction(0)).to.emit(project, "TransactionSigned");
 
 			// Retrieving again the first transaction.
 			transaction = await project.getTransaction(0);
