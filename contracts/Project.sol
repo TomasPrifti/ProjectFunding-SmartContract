@@ -15,6 +15,7 @@ error Project__TransactionNotPending();
 error Project__TransactionAlreadyExecuted();
 error Project__TransactionAlreadyConfirmed();
 error Project__TransactionNotEnoughConfirmations();
+error Project__TransactionNotEnoughCapital();
 
 /**
  * @title A project for decentralized crowdfunding
@@ -207,21 +208,23 @@ contract Project {
 		) {
 			revert Project__TransactionNotEnoughConfirmations();
 		}
-		transaction.executed = true;
-
+		
 		IERC20 usdt = IERC20(i_usdtTokenAddress);
-
-		if (usdt.balanceOf(address(this)) >= transaction.value) {
-			// Transfer from the Contract to the TargetWallet.
-			usdt.transfer(
-				transaction.to,
-				usdt.balanceOf(address(this))
-			);
-
-			transaction.status = TransactionStatus.EXECUTED;
-			//emit TransactionExecuted(address(this));
-			//emit ExecuteTransaction(msg.sender, _txIndex);
+		
+		if (usdt.balanceOf(address(this)) < transaction.value) {
+			revert Project__TransactionNotEnoughCapital();
 		}
+
+		// Transfer from the Contract to the TargetWallet.
+		usdt.transfer(
+			transaction.to,
+			usdt.balanceOf(address(this))
+		);
+
+		transaction.executed = true;
+		transaction.status = TransactionStatus.EXECUTED;
+		//emit TransactionExecuted(address(this));
+		//emit ExecuteTransaction(msg.sender, _txIndex);
 	}
 
 	/**
