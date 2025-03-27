@@ -167,15 +167,48 @@ describe("Project", () => {
 		});
 	});
 
+	describe("signTransaction", () => {
+		it("Sign a transaction and check if successfully signed", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+			let transaction;
+
+			// Approve and fund the project.
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
+
+			// Creation of a new transaction.
+			await project.connect(owner).createTransaction(otherAccount, usdtToSend);
+
+			// Retrieving the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking the number of confirmations of the transaction already created.
+			expect(transaction.numConfirmations).to.equal(0);
+
+			// Signing the transaction.
+			await project.connect(otherAccount).signTransaction(0);
+
+			// Retrieving again the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking the number of confirmations of the transaction.
+			expect(transaction.numConfirmations).to.equal(1);
+		});
+	});
+
 	describe("revokeTransaction", () => {
 		it("Revoke a transaction and check if successfully revoked", async () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("100", 6);
 			let transaction;
 
+			// Approve and fund the project.
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
+
 			// Creation of a new transaction.
 			await project.connect(owner).createTransaction(otherAccount, usdtToSend);
-			await expect(project.connect(owner).createTransaction(otherAccount, usdtToSend)).to.emit(project, "TransactionCreated");
 
 			// Retrieving the first transaction.
 			transaction = await project.getTransaction(0);
@@ -204,6 +237,10 @@ describe("Project", () => {
 		it("Try to revoke a transaction that is not pending", async () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("100", 6);
+
+			// Approve and fund the project.
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
 
 			// Creation of a new transaction.
 			await project.connect(owner).createTransaction(otherAccount, usdtToSend);
@@ -249,6 +286,10 @@ describe("Project", () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("100", 6);
 
+			// Approve and fund the project.
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend * 2n);
+			await project.connect(otherAccount).fundProject(usdtToSend * 2n);
+
 			// Initial count has to be zero.
 			expect(await project.getTransactionCount()).to.equal(0);
 
@@ -270,6 +311,10 @@ describe("Project", () => {
 		it("Testing the function getTransaction", async () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("100", 6);
+
+			// Approve and fund the project.
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
 
 			// Creation of a new transaction.
 			await expect(project.connect(owner).createTransaction(otherAccount, usdtToSend)).to.emit(project, "TransactionCreated");
