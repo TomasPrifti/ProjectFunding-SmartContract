@@ -203,6 +203,14 @@ describe("Project", () => {
 			// Try to create a new transaction.
 			await expect(project.connect(owner).createTransaction(otherAccount, usdtToSend)).to.be.revertedWithCustomError(project, "Project__InsufficientAmount");
 		});
+
+		it("Try to create a transaction when there isn't capital available", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+
+			// Try to create a new transaction.
+			await expect(project.connect(owner).createTransaction(otherAccount, usdtToSend)).to.be.revertedWithCustomError(project, "Project__TransactionNotEnoughCapital");
+		});
 	});
 
 	describe("signTransaction", () => {
