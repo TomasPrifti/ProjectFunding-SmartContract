@@ -216,7 +216,26 @@ contract Project {
 		s_isConfirmed[txIndex][msg.sender] = true;
 
 		//emit signTransaction(msg.sender, txIndex);
+	}
 
+	/**
+	 * Function used to execute a specific transaction already confirmed by the financiers.
+	 *
+	 * @param txIndex The index of the transaction to execute.
+	 */
+	function executeTransaction(uint256 txIndex) public onlyOwner {
+		if (txIndex >= s_transactions.length) {
+			revert Project__TransactionNotExist();
+		}
+
+		Transaction storage transaction = s_transactions[txIndex];
+
+		if (transaction.executed) {
+			revert Project__TransactionAlreadyExecuted();
+		}
+		if (transaction.status != TransactionStatus.PENDING) {
+			revert Project__TransactionNotPending();
+		}
 		if (transaction.numConfirmations < s_financiersAddresses.length) {
 			revert Project__TransactionNotEnoughConfirmations();
 		}
