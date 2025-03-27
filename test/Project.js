@@ -196,6 +196,40 @@ describe("Project", () => {
 			expect(transaction.numConfirmations).to.equal(1);
 		});
 
+		it("Try to sign a transaction that is already executed", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+			let transaction;
+
+			// Approve and fund the project.
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
+
+			// Creation of a new transaction.
+			await project.connect(owner).createTransaction(owner, usdtToSend);
+
+			// Retrieving the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking the "executed" status of the transaction already created.
+			expect(transaction.executed).to.false;
+
+			// Signing the transaction.
+			await project.connect(otherAccount).signTransaction(0);
+
+			// Execute the transaction already created and signed.
+			await project.connect(owner).executeTransaction(0);
+
+			// Retrieving again the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking the "executed" status of the transaction already executed.
+			expect(transaction.executed).to.true;
+
+			// Try to execute again the same transaction.
+			await expect(project.connect(otherAccount).signTransaction(0)).to.be.revertedWithCustomError(project, "Project__TransactionAlreadyExecuted");
+		});
+
 		it("Try to sign a transaction more than once", async () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("100", 6);
