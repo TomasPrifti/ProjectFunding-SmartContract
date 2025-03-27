@@ -279,6 +279,41 @@ describe("Project", () => {
 			// Execute the transaction already revoked.
 			await expect(project.connect(owner).executeTransaction(0)).to.be.revertedWithCustomError(project, "Project__TransactionNotPending");
 		});
+
+		it("Try to execute a transaction when its number of confirmations is not enough", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+			let transaction;
+
+			// Approve and fund the project.
+			await usdt.connect(owner).approve(project.target, usdtToSend);
+			await project.connect(owner).fundProject(usdtToSend);
+
+			// Approve and fund the project.
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
+
+			// Creation of a new transaction.
+			await project.connect(owner).createTransaction(owner, usdtToSend);
+
+			// Retrieving the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking the number of confirmations of the transaction already created.
+			expect(transaction.numConfirmations).to.equal(0);
+
+			// Signing the transaction.
+			await project.connect(otherAccount).signTransaction(0);
+
+			// Retrieving again the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking again the number of confirmations of the transaction already signed.
+			expect(transaction.numConfirmations).to.equal(1);
+
+			// Execute the transaction already signed (only once).
+			await expect(project.connect(owner).executeTransaction(0)).to.be.revertedWithCustomError(project, "Project__TransactionNotEnoughConfirmations");
+		});
 	});
 
 	describe("revokeTransaction", () => {
