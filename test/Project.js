@@ -196,6 +196,13 @@ describe("Project", () => {
 			expect(transaction.numConfirmations).to.equal(1);
 		});
 
+		it("Try to sign a transaction from the owner", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+
+			// Try to execute a transaction that doesn't exist.
+			await expect(project.connect(owner).signTransaction(0)).to.be.revertedWithCustomError(project, "Project__IsOwner");
+		});
+
 		it("Try to sign a transaction that doesn't exist", async () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 
