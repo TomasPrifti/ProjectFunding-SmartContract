@@ -226,7 +226,7 @@ describe("Project", () => {
 			await project.connect(otherAccount).signTransaction(0);
 
 			// Execute the transaction already created and signed.
-			await project.connect(owner).executeTransaction(0);
+			await expect(project.connect(owner).executeTransaction(0)).to.emit(project, "TransactionExecuted");
 
 			// Retrieving again the first transaction.
 			transaction = await project.getTransaction(0);

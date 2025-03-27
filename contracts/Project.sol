@@ -70,7 +70,13 @@ contract Project {
 		uint amount
 	);
 	// Event used to notify that the transaction has been executed successfully.
-	event TransactionExecuted(address indexed contractAddress);
+	event TransactionExecuted(
+		address owner,
+		address indexed contractAddress,
+		uint indexed txIndex,
+		address indexed target,
+		uint amount
+	);
 	// Event used to notify that the transaction has been revoked successfully.
 	event TransactionRevoked(
 		address owner,
@@ -252,8 +258,14 @@ contract Project {
 		s_capitalLocked -= transaction.value;
 		transaction.executed = true;
 		transaction.status = TransactionStatus.EXECUTED;
-		//emit TransactionExecuted(address(this));
-		//emit ExecuteTransaction(msg.sender, _txIndex);
+
+		emit TransactionExecuted(
+			i_owner,
+			address(this),
+			txIndex,
+			transaction.to,
+			transaction.value
+		);
 	}
 
 	/**
