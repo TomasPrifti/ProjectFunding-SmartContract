@@ -197,6 +197,55 @@ describe("Project", () => {
 		});
 	});
 
+	describe("executeTransaction", () => {
+		it("Execute a transaction and check if successfully executed", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+			let transaction;
+
+			// Saving the initial balance of the users.
+			const initialBalanceOwner = await usdt.balanceOf(owner);
+			const initialBalanceOtherAccount = await usdt.balanceOf(otherAccount);
+
+			// Approve and fund the project.
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
+
+			// Creation of a new transaction.
+			await project.connect(owner).createTransaction(owner, usdtToSend);
+
+			// Retrieving the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking the status of the transaction already created.
+			expect(transaction.executed).to.false;
+			expect(transaction.status).to.equal(0);
+			expect(await project.TransactionStatusLabel(transaction.status)).to.equal("Pending");
+
+			// Signing the transaction.
+			await project.connect(otherAccount).signTransaction(0);
+
+			// Execute the transaction already created and signed.
+			await project.connect(owner).executeTransaction(0);
+
+			// Retrieving again the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking again the status of the transaction already executed.
+			expect(transaction.executed).to.true;
+			expect(transaction.status).to.equal(1);
+			expect(await project.TransactionStatusLabel(transaction.status)).to.equal("Executed");
+
+			// Checking the balance of the project.
+			expect(await usdt.balanceOf(project.target)).to.equal(0);
+			expect(await project.getUSDTBalance()).to.equal(0);
+
+			// Checking the new balance of the users.
+			expect(await usdt.balanceOf(owner)).to.equal(initialBalanceOwner + usdtToSend);
+			expect(await usdt.balanceOf(otherAccount)).to.equal(initialBalanceOtherAccount - usdtToSend);
+		});
+	});
+
 	describe("revokeTransaction", () => {
 		it("Revoke a transaction and check if successfully revoked", async () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
