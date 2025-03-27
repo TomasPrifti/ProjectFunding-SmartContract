@@ -245,6 +245,13 @@ describe("Project", () => {
 			expect(await usdt.balanceOf(otherAccount)).to.equal(initialBalanceOtherAccount - usdtToSend);
 		});
 
+		it("Try to execute a transaction that doesn't exist", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+
+			// Try to execute a transaction that doesn't exist.
+			await expect(project.connect(owner).executeTransaction(0)).to.be.revertedWithCustomError(project, "Project__TransactionNotExist");
+		});
+
 		it("Try to execute a transaction that is already executed", async () => {
 			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
 			const usdtToSend = ethers.parseUnits("100", 6);
