@@ -244,6 +244,41 @@ describe("Project", () => {
 			expect(await usdt.balanceOf(owner)).to.equal(initialBalanceOwner + usdtToSend);
 			expect(await usdt.balanceOf(otherAccount)).to.equal(initialBalanceOtherAccount - usdtToSend);
 		});
+
+		it("Try to execute a transaction that is not pending", async () => {
+			const { project, usdt, args, owner, otherAccount } = await loadFixture(deployProjectFixture);
+			const usdtToSend = ethers.parseUnits("100", 6);
+			let transaction;
+
+			// Approve and fund the project.
+			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
+			await project.connect(otherAccount).fundProject(usdtToSend);
+
+			// Creation of a new transaction.
+			await project.connect(owner).createTransaction(owner, usdtToSend);
+
+			// Retrieving the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking the status of the transaction already created.
+			expect(transaction.executed).to.false;
+			expect(transaction.status).to.equal(0);
+			expect(await project.TransactionStatusLabel(transaction.status)).to.equal("Pending");
+
+			// Revoke the transaction.
+			await project.connect(owner).revokeTransaction(0);
+
+			// Retrieving the first transaction.
+			transaction = await project.getTransaction(0);
+
+			// Checking the status of the transaction already created.
+			expect(transaction.executed).to.false;
+			expect(transaction.status).to.equal(2);
+			expect(await project.TransactionStatusLabel(transaction.status)).to.equal("Revoked");
+
+			// Execute the transaction already revoked.
+			await expect(project.connect(owner).executeTransaction(0)).to.be.revertedWithCustomError(project, "Project__TransactionNotPending");
+		});
 	});
 
 	describe("revokeTransaction", () => {
@@ -296,7 +331,7 @@ describe("Project", () => {
 
 			// Revoking the transaction.
 			await project.connect(owner).revokeTransaction(0);
-			
+
 			// Retrieving the first transaction.
 			const transaction = await project.getTransaction(0);
 
