@@ -356,6 +356,19 @@ contract Project {
 		return output;
 	}
 
+	/**
+	 * Function used to check if the caller has signed a specific transaction given its index.
+	 *
+	 * @param txIndex The index of the transaction to check.
+	 *
+	 * @return True if the caller has signed the transaction, false otherwise.
+	 */
+	function isTransactionSignedByMe(
+		uint256 txIndex
+	) public view returns (bool) {
+		return s_isConfirmed[txIndex][msg.sender];
+	}
+
 	/* Getters Function */
 
 	function getName() public view returns (string memory) {
