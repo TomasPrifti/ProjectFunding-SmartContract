@@ -69,6 +69,12 @@ contract Project {
 		address indexed target,
 		uint amount
 	);
+	// Event used to notify that the transaction has been signed successfully.
+	event TransactionSigned(
+		address owner,
+		address indexed contractAddress,
+		uint indexed txIndex
+	);
 	// Event used to notify that the transaction has been executed successfully.
 	event TransactionExecuted(
 		address owner,
@@ -221,7 +227,7 @@ contract Project {
 		transaction.numConfirmations += 1;
 		s_isConfirmed[txIndex][msg.sender] = true;
 
-		//emit signTransaction(msg.sender, txIndex);
+		emit TransactionSigned(i_owner, address(this), txIndex);
 	}
 
 	/**
