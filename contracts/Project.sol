@@ -47,6 +47,7 @@ contract Project {
 	address private immutable i_usdtTokenAddress;
 
 	// Storage variables.
+	uint private s_capitalLocked;
 	mapping(TransactionStatus => string) s_statusLabel;
 
 	address[] private s_financiersAddresses;
@@ -107,6 +108,8 @@ contract Project {
 		i_minCapital = minCapital;
 		i_owner = owner;
 		i_usdtTokenAddress = usdtToken;
+
+		s_capitalLocked = 0;
 	}
 
 	/**
@@ -151,6 +154,16 @@ contract Project {
 	 * @param amount The desired amount to send.
 	 */
 	function createTransaction(address target, uint amount) public onlyOwner {
+		if (amount <= 0) {
+			revert Project__InsufficientAmount();
+		}
+
+		IERC20 usdt = IERC20(i_usdtTokenAddress);
+
+		if (usdt.balanceOf(address(this)) - s_capitalLocked < amount) {
+			revert Project__TransactionNotEnoughCapital();
+		}
+
 		uint256 txIndex = s_transactions.length;
 
 		s_transactions.push(
@@ -162,6 +175,8 @@ contract Project {
 				status: TransactionStatus.PENDING
 			})
 		);
+
+		s_capitalLocked += amount;
 
 		emit TransactionCreated(
 			i_owner,
@@ -202,25 +217,20 @@ contract Project {
 
 		//emit signTransaction(msg.sender, txIndex);
 
-		if (
-			transaction.numConfirmations <
-			s_financiersAddresses.length
-		) {
+		if (transaction.numConfirmations < s_financiersAddresses.length) {
 			revert Project__TransactionNotEnoughConfirmations();
 		}
-		
+
 		IERC20 usdt = IERC20(i_usdtTokenAddress);
-		
+
 		if (usdt.balanceOf(address(this)) < transaction.value) {
 			revert Project__TransactionNotEnoughCapital();
 		}
 
 		// Transfer from the Contract to the TargetWallet.
-		usdt.transfer(
-			transaction.to,
-			usdt.balanceOf(address(this))
-		);
+		usdt.transfer(transaction.to, transaction.value);
 
+		s_capitalLocked -= transaction.value;
 		transaction.executed = true;
 		transaction.status = TransactionStatus.EXECUTED;
 		//emit TransactionExecuted(address(this));
@@ -236,11 +246,15 @@ contract Project {
 		if (txIndex >= s_transactions.length) {
 			revert Project__TransactionNotExist();
 		}
-		if (s_transactions[txIndex].status != TransactionStatus.PENDING) {
+
+		Transaction storage transaction = s_transactions[txIndex];
+
+		if (transaction.status != TransactionStatus.PENDING) {
 			revert Project__TransactionNotPending();
 		}
 
-		s_transactions[txIndex].status = TransactionStatus.REVOKED;
+		transaction.status = TransactionStatus.REVOKED;
+		s_capitalLocked -= transaction.value;
 
 		emit TransactionRevoked(i_owner, address(this), txIndex);
 	}
