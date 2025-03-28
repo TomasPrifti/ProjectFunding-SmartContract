@@ -6,6 +6,9 @@ npx hardhat ignition deploy ignition/modules/mocks.js --network localhost
 printf "\nUpdating Address parameter for MockUSDT ..."
 npx hardhat run scripts/update-parameters.js
 
+printf "\nMinting some token from MockUSDT for the other accounts ..."
+npx hardhat run scripts/mint-token.js --network localhost
+
 printf "\nDeploying Manager ..."
 npx hardhat ignition deploy ignition/modules/deploy-manager.js --network localhost --parameters ignition/parameters.json
 
