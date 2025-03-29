@@ -397,6 +397,10 @@ contract Project {
 		return i_usdtTokenAddress;
 	}
 
+	function getCapitalLocked() public view returns (uint) {
+		return s_capitalLocked;
+	}
+
 	function getFinanciers() public view returns (address[] memory) {
 		return s_financiersAddresses;
 	}
