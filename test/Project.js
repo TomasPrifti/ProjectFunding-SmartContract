@@ -206,8 +206,14 @@ describe("Project", () => {
 			await usdt.connect(otherAccount).approve(project.target, usdtToSend);
 			await project.connect(otherAccount).fundProject(usdtToSend);
 
+			// Check the capital locked.
+			expect(await project.getCapitalLocked()).to.equal(0);
+
 			// Creation of a new transaction.
 			await expect(project.connect(owner).createTransaction(otherAccount, usdtToSend)).to.emit(project, "TransactionCreated");
+
+			// Check again the capital locked.
+			expect(await project.getCapitalLocked()).to.equal(usdtToSend);
 
 			// Check again the count of the transactions.
 			expect(await project.getTransactionCount()).to.equal(1);
