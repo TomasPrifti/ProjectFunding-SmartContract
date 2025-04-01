@@ -12,8 +12,11 @@ async function main() {
 
 	// MockUSDT Contract Deploy.
 	const usdt = await ethers.getContractAt("MockUSDT", contractAddress)
-	const [owner, otherAccount] = await ethers.getSigners();
+	const [owner, secondAccount, thirdAccount] = await ethers.getSigners();
 
-	// Minting some Token for the other Account.
-	await usdt.connect(otherAccount).mintToken();
+	// Minting some Token for the second Account.
+	await usdt.connect(secondAccount).mintToken();
+
+	// Minting some Token for the third Account.
+	await usdt.connect(thirdAccount).mintToken();
 }
