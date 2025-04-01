@@ -334,6 +334,9 @@ contract Project {
 	function getTransaction(
 		uint256 txIndex
 	) public view returns (Transaction memory) {
+		if (txIndex >= s_transactions.length) {
+			revert Project__TransactionNotExist();
+		}
 		return s_transactions[txIndex];
 	}
 
