@@ -3,6 +3,7 @@
 pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 error Project__NotEnoughCapitalInvested();
 error Project__InsufficientAmount();
@@ -144,10 +145,7 @@ contract Project {
 		}
 
 		// Transfer USDT from the caller of this contract.
-		bool success = usdt.transferFrom(msg.sender, address(this), amount);
-		if (!success) {
-			revert Project__InsufficientAmount();
-		}
+		SafeERC20.safeTransferFrom(usdt, msg.sender, address(this), amount);
 
 		// Saving the amount invested and save the financier.
 		s_financiersCapitalInvested[msg.sender] += amount;
