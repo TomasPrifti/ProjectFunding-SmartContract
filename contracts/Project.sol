@@ -246,7 +246,14 @@ contract Project {
 		if (transaction.status != TransactionStatus.PENDING) {
 			revert Project__TransactionNotPending();
 		}
-		if (transaction.numConfirmations < s_financiersAddresses.length) {
+
+		// Exclude the owner from the counter if exist.
+		uint requiredConfirmations = s_financiersAddresses.length;
+		if (s_financiersExist[i_owner]) {
+			requiredConfirmations -= 1;
+		}
+
+		if (transaction.numConfirmations < requiredConfirmations) {
 			revert Project__TransactionNotEnoughConfirmations();
 		}
 
